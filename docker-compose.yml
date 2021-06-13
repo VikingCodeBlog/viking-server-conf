@@ -1,0 +1,67 @@
+version: "3.3"
+networks:
+  mongodb_loki_net:
+    driver: "bridge"
+services:
+  lokidb:
+    image : "mongo"
+    container_name: "loki-mongodb"
+    hostname: "lokidb"
+    networks:
+      - "mongodb_loki_net"
+    environment:
+      - "PUID=1000"
+      - "PGID=1000"
+    volumes:
+      - "~/mongodb/database:/data/db"
+    ports:
+      - "27017:27017"
+    restart: "unless-stopped"
+  loki:
+    build: "/opt/vikingApps/Loki-bot"
+    container_name: "loki-bot"
+    hostname: "loki"
+    networks:
+      - "mongodb_loki_net"
+    depends_on:
+      - "lokidb"
+    ports:
+      - "8080:8080"
+    restart: "always"
+  lokidb:
+    image : "mongo"
+    container_name: "loki-mongodb"
+    hostname: "loki-mongodb"
+    networks:
+      - "mongodb_loki_net"
+    environment:
+      - "PUID=1000"
+      - "PGID=1000"
+    volumes:
+      - "~/mongodb/database:/data/db"
+    ports:
+      - "27017:27017"
+    restart: "unless-stopped"
+  mongoclient:
+    image: "mongoclient/mongoclient:latest"
+    container_name: "mongoclient"
+    networks:
+      - "mongodb_loki_net"
+    hostname: "mongoclient"
+    depends_on:
+      - "lokidb"
+    networks:
+      - "mongodb_loki_net"
+    ports:
+      - "3300:3000"
+  portainer:
+    image: portainer/portainer
+    ports:
+      - "9500:9000"
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  portainer_data:
